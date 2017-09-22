@@ -1,4 +1,8 @@
 {
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robbiemccorkell/micro-example.git"
+  },
   "main": "index.js",
   "scripts": {
     "start": "micro -p 8080"
