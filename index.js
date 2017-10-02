@@ -1,6 +1,6 @@
 const elasticsearch = require('elasticsearch');
 
-const { ELASTICSEARCH_DATABASE } = process.env;
+const { ELASTICSEARCH_DATABASE, ELASTICSEARCH_SERVICE_HOST } = process.env;
 
 module.exports = (req, res) => {
   console.log(ELASTICSEARCH_DATABASE);
