@@ -4,6 +4,7 @@ const { ELASTICSEARCH_DATABASE } = process.env;
 
 module.exports = (req, res) => {
   console.log(ELASTICSEARCH_DATABASE);
+  console.log(ELASTICSEARCH_SERVICE_HOST);
   const client = new elasticsearch.Client({
     host: `${ELASTICSEARCH_DATABASE}:9200`,
     log: 'trace',
