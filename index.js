@@ -5,7 +5,7 @@ const { DATABASE_SERVICE_NAME, ELASTICSEARCH_SERVICE_HOST, ELASTICSEARCH_SERVICE
 module.exports = (req, res) => {
   console.log(process.env)
   const client = new elasticsearch.Client({
-    host: `${ELASTICSEARCH_SERVICE_HOST}:${ELASTICSEARCH_SERVICE_PORT}`,
+    host: `${DATABASE_SERVICE_NAME}:${ELASTICSEARCH_SERVICE_PORT}`,
     log: 'trace',
   });
 
