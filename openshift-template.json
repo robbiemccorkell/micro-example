@@ -169,7 +169,10 @@
                   }
                 ],
                 "env": [
-                  
+                  {
+                    "name": "ELASTICSEARCH_DATABASE",
+                    "value": "${DATABASE_NAME}"
+                  }
                 ],
                 "readinessProbe": {
                   "timeoutSeconds": 3,
@@ -292,7 +295,10 @@
                   }
                 ],
                 "env": [
-
+                  {
+                    "name": "ELASTICSEARCH_DATABASE",
+                    "value": "${DATABASE_NAME}"
+                  }
                 ],
                 "readinessProbe": {
                   "timeoutSeconds": 1,
