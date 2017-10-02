@@ -3,9 +3,7 @@ const elasticsearch = require('elasticsearch');
 const { DATABASE_SERVICE_NAME, ELASTICSEARCH_SERVICE_HOST, ELASTICSEARCH_SERVICE_PORT } = process.env;
 
 module.exports = (req, res) => {
-  console.log(DATABASE_SERVICE_NAME);
-  console.log(ELASTICSEARCH_SERVICE_HOST);
-  console.log(ELASTICSEARCH_SERVICE_PORT);
+  console.log(process.env);
   const client = new elasticsearch.Client({
     host: `172.30.187.124:${ELASTICSEARCH_SERVICE_PORT}`,
     log: 'trace',
