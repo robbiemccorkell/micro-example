@@ -170,7 +170,7 @@
                 ],
                 "env": [
                   {
-                    "name": "ELASTICSEARCH_DATABASE",
+                    "name": "DATABASE_SERVICE_NAME",
                     "value": "${DATABASE_SERVICE_NAME}"
                   }
                 ],
@@ -296,7 +296,7 @@
                 ],
                 "env": [
                   {
-                    "name": "ELASTICSEARCH_DATABASE",
+                    "name": "DATABASE_SERVICE_NAME",
                     "value": "${DATABASE_SERVICE_NAME}"
                   }
                 ],
