@@ -65,6 +65,15 @@
       }
     },
     {
+      "kind": "ImageStream",
+      "metadata": {
+        "name": "elasticsearch"
+      },
+      "spec": {
+        "dockerImageRepository": "docker.io/elasticsearch"
+      }
+    },
+    {
       "kind": "BuildConfig",
       "apiVersion": "v1",
       "metadata": {
@@ -265,7 +274,7 @@
               "from": {
                 "kind": "ImageStreamTag",
                 "namespace": "${NAMESPACE}",
-                "name": "elasticsearch:5"
+                "name": "elasticsearch:5.5"
               }
             }
           },
