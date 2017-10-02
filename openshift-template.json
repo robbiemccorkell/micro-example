@@ -65,15 +65,6 @@
       }
     },
     {
-      "kind": "ImageStream",
-      "metadata": {
-        "name": "elasticsearch"
-      },
-      "spec": {
-        "dockerImageRepository": "docker.io/elasticsearch"
-      }
-    },
-    {
       "kind": "BuildConfig",
       "apiVersion": "v1",
       "metadata": {
@@ -143,9 +134,7 @@
             "type": "ImageChange",
             "imageChangeParams": {
               "automatic": true,
-              "containerNames": [
-                "micro-example"
-              ],
+              "containerNames": ["micro-example"],
               "from": {
                 "kind": "ImageStreamTag",
                 "name": "${NAME}:latest"
@@ -211,15 +200,19 @@
       }
     },
     {
+      "kind": "ServiceAccount",
+      "metadata": {
+        "name": "${DATABASE_SERVICE_NAME}"
+      }
+    },
+    {
       "kind": "PersistentVolumeClaim",
       "apiVersion": "v1",
       "metadata": {
         "name": "${DATABASE_SERVICE_NAME}"
       },
       "spec": {
-        "accessModes": [
-          "ReadWriteOnce"
-        ],
+        "accessModes": ["ReadWriteOnce"],
         "resources": {
           "requests": {
             "storage": "${VOLUME_CAPACITY}"
@@ -229,114 +222,106 @@
     },
     {
       "kind": "Service",
-      "apiVersion": "v1",
       "metadata": {
         "name": "${DATABASE_SERVICE_NAME}",
-        "annotations": {
-          "description": "Exposes the database server"
+        "labels": {
+          "component": "${DATABASE_SERVICE_NAME}"
         }
       },
       "spec": {
+        "type": "LoadBalancer",
+        "selector": {
+          "name": "${DATABASE_SERVICE_NAME}",
+          "component": "${DATABASE_SERVICE_NAME}"
+        },
         "ports": [
           {
-            "name": "elasticsearch-rest",
+            "name": "http",
             "port": 9200,
-            "targetPort": 9200
+            "protocol": "TCP"
+          },
+          {
+            "name": "transport",
+            "port": 9300,
+            "protocol": "TCP"
           }
-        ],
-        "selector": {
-          "name": "${DATABASE_SERVICE_NAME}"
-        }
+        ]
       }
     },
     {
-      "kind": "DeploymentConfig",
-      "apiVersion": "v1",
+      "kind": "ReplicationController",
       "metadata": {
-        "name": "${DATABASE_SERVICE_NAME}",
-        "annotations": {
-          "description": "Defines how to deploy the database",
-          "template.alpha.openshift.io/wait-for-ready": "true"
+        "name": "es",
+        "labels": {
+          "component": "elasticsearch"
         }
       },
       "spec": {
-        "strategy": {
-          "type": "Rolling"
-        },
-        "triggers": [
-          {
-            "type": "ImageChange",
-            "imageChangeParams": {
-              "automatic": true,
-              "containerNames": [
-                "elasticsearch"
-              ],
-              "from": {
-                "kind": "ImageStreamTag",
-                "namespace": "${NAMESPACE}",
-                "name": "elasticsearch:5.5"
-              }
-            }
-          },
-          {
-            "type": "ConfigChange"
-          }
-        ],
         "replicas": 1,
-        "selector": {
-          "name": "${DATABASE_SERVICE_NAME}"
-        },
         "template": {
           "metadata": {
-            "name": "${DATABASE_SERVICE_NAME}",
             "labels": {
-              "name": "${DATABASE_SERVICE_NAME}"
+              "component": "${DATABASE_SERVICE_NAME}"
             }
           },
           "spec": {
+            "serviceAccount": "${DATABASE_SERVICE_NAME}",
             "containers": [
               {
-                "name": "elasticsearch",
-                "image": " ",
-                "ports": [
-                  {
-                    "containerPort": 9200
-                  }
-                ],
+                "name": "es",
+                "image":
+                  "quay.io/pires/docker-elasticsearch-kubernetes:1.7.1-4",
                 "env": [
                   {
-                    "name": "DATABASE_SERVICE_NAME",
-                    "value": "${DATABASE_SERVICE_NAME}"
+                    "name": "KUBERNETES_CA_CERTIFICATE_FILE",
+                    "value":
+                      "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+                  },
+                  {
+                    "name": "NAMESPACE",
+                    "valueFrom": {
+                      "fieldRef": {
+                        "fieldPath": "metadata.namespace"
+                      }
+                    }
+                  },
+                  {
+                    "name": "CLUSTER_NAME",
+                    "value": "myesdb"
+                  },
+                  {
+                    "name": "DISCOVERY_SERVICE",
+                    "value": "elasticsearch"
+                  },
+                  {
+                    "name": "NODE_MASTER",
+                    "value": "true"
+                  },
+                  {
+                    "name": "NODE_DATA",
+                    "value": "true"
+                  },
+                  {
+                    "name": "HTTP_ENABLE",
+                    "value": "true"
                   }
                 ],
-                "readinessProbe": {
-                  "timeoutSeconds": 1,
-                  "initialDelaySeconds": 3,
-                  "exec": {
-                    "command": [
-                      "/bin/sh",
-                      "-i",
-                      "-c",
-                      "curl 127.0.0.1:9200/_cluster/health"
-                    ]
+                "ports": [
+                  {
+                    "containerPort": 9200,
+                    "name": "http",
+                    "protocol": "TCP"
+                  },
+                  {
+                    "containerPort": 9300,
+                    "name": "transport",
+                    "protocol": "TCP"
                   }
-                },
-                "livenessProbe": {
-                  "timeoutSeconds": 1,
-                  "initialDelaySeconds": 30,
-                  "tcpSocket": {
-                    "port": 9200
-                  }
-                },
-                "resources": {
-                  "limits": {
-                    "memory": "${MEMORY_ELASTICSEARCH_LIMIT}"
-                  }
-                },
+                ],
                 "volumeMounts": [
                   {
-                    "name": "${DATABASE_SERVICE_NAME}-data",
-                    "mountPath": "/var/lib/elasticsearch/data"
+                    "mountPath": "/data",
+                    "name": "${DATABASE_SERVICE_NAME}-data"
                   }
                 ]
               }
@@ -344,6 +329,7 @@
             "volumes": [
               {
                 "name": "${DATABASE_SERVICE_NAME}-data",
+                "emptyDir": {},
                 "persistentVolumeClaim": {
                   "claimName": "${DATABASE_SERVICE_NAME}"
                 }
@@ -358,7 +344,8 @@
     {
       "name": "NAME",
       "displayName": "Name",
-      "description": "The name assigned to all of the frontend objects defined in this template.",
+      "description":
+        "The name assigned to all of the frontend objects defined in this template.",
       "required": true,
       "value": "micro-example"
     },
@@ -386,20 +373,23 @@
     {
       "name": "SOURCE_REPOSITORY_URL",
       "displayName": "Git Repository URL",
-      "description": "The URL of the repository with your application source code.",
+      "description":
+        "The URL of the repository with your application source code.",
       "required": true,
       "value": "https://github.com/robbiemccorkell/micro-example.git"
     },
     {
       "name": "APPLICATION_DOMAIN",
       "displayName": "Application Hostname",
-      "description": "The exposed hostname that will route to the Node.js service, if left blank a value will be defaulted.",
+      "description":
+        "The exposed hostname that will route to the Node.js service, if left blank a value will be defaulted.",
       "value": ""
     },
     {
       "name": "GITHUB_WEBHOOK_SECRET",
       "displayName": "GitHub Webhook Secret",
-      "description": "Github trigger secret.  A difficult to guess string encoded as part of the webhook URL.  Not encrypted.",
+      "description":
+        "Github trigger secret.  A difficult to guess string encoded as part of the webhook URL.  Not encrypted.",
       "generate": "expression",
       "from": "[a-zA-Z0-9]{40}"
     },
@@ -425,7 +415,8 @@
     {
       "name": "MEMORY_ELASTICSEARCH_LIMIT",
       "displayName": "Memory Limit (MongoDB)",
-      "description": "Maximum amount of memory the ElasticSearch container can use.",
+      "description":
+        "Maximum amount of memory the ElasticSearch container can use.",
       "required": true,
       "value": "512Mi"
     }
